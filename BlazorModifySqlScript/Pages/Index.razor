@@ -1,0 +1,90 @@
+﻿@page "/"
+@using CurrieTechnologies.Razor.Clipboard
+@inject ClipboardService clipboard
+
+<PageTitle>Index</PageTitle>
+
+<MudTextField Counter="0" Immediate="true" Label="Input" Variant="Variant.Text" @bind-Value="Input" Lines="Rows" Clearable="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentPaste" OnAdornmentClick="@(async e => Input = await clipboard.ReadTextAsync())" />
+<MudTextField Counter="0" Immediate="true" Label="Output" ReadOnly="true" Variant="Variant.Text" @bind-Value="_output" Lines="Rows" Clearable="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy" OnAdornmentClick="@(async e => await clipboard.WriteTextAsync(_output))" />
+
+
+@code{
+    private string _output = string.Empty;
+    private int Rows = 10;
+
+    private string Output(string value)
+    {
+        var lines = value.Split('\n');
+        if (Input.Length == 0) return "";
+        if (lines.Length <= 1) return "Format of input incorrect";
+
+        var index = GetIndex(ExtractParenthesis(lines[0]));
+        for (var i = 2; i < lines.Length; i++)
+        {
+            if (!string.IsNullOrEmpty(lines[i]) || !lines[i].Equals("\r"))
+            {
+                lines[i] = ModifyColumn(lines[i], index);
+            }
+        }
+        var result = string.Join('\n', lines).TrimEnd();
+        if (string.IsNullOrEmpty(result)) return string.Empty;
+        return result.Remove(result.LastIndexOf(','));
+    }
+
+    private string ModifyColumn(string lineValue, List<int> index)
+    {
+        var s = ExtractParenthesis(lineValue);
+        if (string.IsNullOrEmpty(s)) return string.Empty;
+        var values = s.Split(", ");
+        foreach (var i in index)
+        {
+            values[i] = "GETDATE()";
+        }
+
+        return "(" + string.Join(", ",values)  +"),";
+    }
+
+    private List<int> GetIndex(string input)
+    {
+        var columns = input.Split(", ");
+        if (columns.Length <= 1) return new();
+        List<int> results = new();
+        for (var i=0;i<columns.Length;i++)
+        {
+            var c = columns[i];
+            if (c.Equals("[CreatedDate]") || c.Equals("[LastModifiedDate]"))
+            {
+                results.Add(i);
+            }
+        }
+        return results;
+    }
+
+    private string ExtractParenthesis(string input)
+    {
+        int startIndex = input.IndexOf('(') + 1; // Find the index of the opening parenthesis
+        int endIndex = input.IndexOf(')'); // Find the index of the closing parenthesis
+        int length = endIndex - startIndex; // Calculate the length of the text inside parentheses
+        if (length <= 1) return string.Empty;
+        string output = input.Substring(startIndex, length); // Extract the text inside parentheses
+        return output;
+    }
+
+    private void CalculateSize(string value)
+    {
+        Rows = Math.Max(value.Split('\n').Length, value.Split('\r').Length);
+        Rows = Math.Max(Rows, 10);
+    }
+
+    private string _input = "";
+    protected string Input
+    {
+        get => _input;
+        set
+        {
+            _input = value;
+            _output = Output(value);
+            CalculateSize(value);
+        }
+    }
+}
