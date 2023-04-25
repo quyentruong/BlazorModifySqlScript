@@ -7,7 +7,7 @@
   "linkerEnabled": true,
   "resources": {
     "assembly": {
-      "BlazorModifySqlScript.dll": "sha256-JwNemkCtO4rZlcYVsdtwEsChdlzyrIuv4V\/BMpQg4iI=",
+      "BlazorModifySqlScript.dll": "sha256-VukdJSHpov4PHeYYVJ1tJTHFso0uF52M3ksKg74wRaE=",
       "CurrieTechnologies.Razor.Clipboard.dll": "sha256-zd9U4Qas6J9hLpJtywoeALRjNsqHZZDdm7Chvsv2XH8=",
       "Microsoft.AspNetCore.Components.dll": "sha256-5e4mGyQ2Mh7HOGrrgwxlo9mbK96TjeWJJuzpBCfswz8=",
       "Microsoft.AspNetCore.Components.Forms.dll": "sha256-wcPyGU\/T7lzlTPNy+M4AeOL1yYc7qTSAkQwoYJPJdO0=",
