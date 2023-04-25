@@ -4,7 +4,7 @@
 
 <PageTitle>Index</PageTitle>
 
-<MudTextField Counter="0" Immediate="true" Label="Input" Variant="Variant.Text" @bind-Value="Input" Lines="Rows" Clearable="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentPaste" OnAdornmentClick="@(async e => Input = await clipboard.ReadTextAsync())" />
+<MudTextField Counter="0" Immediate="true" Label="Input" Variant="Variant.Text" @bind-Value="Input" Lines="Rows" Clearable="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentPaste" OnAdornmentClick="@(async e => await ReadFromClipboard())" />
 <MudTextField Counter="0" Immediate="true" Label="Output" ReadOnly="true" Variant="Variant.Text" @bind-Value="_output" Lines="Rows" Clearable="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy" OnAdornmentClick="@(async e => await clipboard.WriteTextAsync(_output))" />
 
 
@@ -12,9 +12,23 @@
     private string _output = string.Empty;
     private int Rows = 10;
 
+    async Task ReadFromClipboard()
+    {
+        // Reading from the clipboard may be denied, so you must handle the exception
+        try
+        {
+            Input = await clipboard.ReadTextAsync();
+        }
+        catch
+        {
+            _output = "Browser doesn't support to read from clipboard";
+        }
+    }
+
+
     private string Output(string value)
     {
-        var lines = value.Split('\n');
+        var lines = value.Trim().Split('\n');
         if (Input.Length == 0) return "";
         if (lines.Length <= 1) return "Format of input incorrect";
 
