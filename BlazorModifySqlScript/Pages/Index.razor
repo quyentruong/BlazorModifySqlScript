@@ -7,7 +7,7 @@
 <MudButton OnClick='()=>Input=sampleText'>Load Sample</MudButton>
 @if (chipText.Length > 0)
 {
-    <MudChipSet @ref="_mudChipSet" SelectedChipsChanged="SelectedChipsChange" MultiSelection="true" Filter="true">
+    <MudChipSet @ref="_mudChipSet" SelectedChipsChanged="SelectedChipsChange" MultiSelection="true">
         @foreach (var c in chipText)
         {
             if (c.Equals("[CreatedDate]") || c.Equals("[LastModifiedDate]"))
