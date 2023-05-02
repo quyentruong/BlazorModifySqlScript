@@ -1,5 +1,6 @@
 ﻿@page "/"
 @using CurrieTechnologies.Razor.Clipboard
+@using System.Text.RegularExpressions;
 @inject ClipboardService clipboard
 @inject ISnackbar Snackbar
 
@@ -7,37 +8,37 @@
 <MudButton OnClick='()=>Input=sampleText'>Load Sample</MudButton>
 @if (chipText.Length > 0)
 {
-    <MudChipSet @ref="_mudChipSet" SelectedChipsChanged="SelectedChipsChange" MultiSelection="true">
-        @foreach (var c in chipText)
-        {
-            if (c.Equals("[CreatedDate]") || c.Equals("[LastModifiedDate]"))
-            {
-                <MudChip Text="@c" Default="true" Color="Color.Primary" Variant="Variant.Text"></MudChip>
-            }
-            else if (c.Equals("[Expired]") || c.Equals("[Available]") || c.Equals("[CreatedByName]") || c.Equals("[LastModifiedByName]"))
-            {
-                <MudChip Disabled Text="@c" Color="Color.Primary" Variant="Variant.Text"></MudChip>
-            }
+  <MudChipSet @ref="_mudChipSet" SelectedChipsChanged="SelectedChipsChange" MultiSelection="true">
+    @foreach (var c in chipText)
+    {
+      if (c.Equals("[CreatedDate]") || c.Equals("[LastModifiedDate]"))
+      {
+        <MudChip Text="@c" Default="true" Color="Color.Primary" Variant="Variant.Text"></MudChip>
+      }
+      else if (c.Equals("[Expired]") || c.Equals("[Available]") || c.Equals("[CreatedByName]") || c.Equals("[LastModifiedByName]"))
+      {
+        <MudChip Disabled Text="@c" Color="Color.Primary" Variant="Variant.Text"></MudChip>
+      }
 
-            else
-            {
-                <MudChip Text="@c" Color="Color.Primary" Variant="Variant.Text"></MudChip>
-            }
-        }
-    </MudChipSet>
+      else
+      {
+        <MudChip Text="@c" Color="Color.Primary" Variant="Variant.Text"></MudChip>
+      }
+    }
+  </MudChipSet>
 }
 <MudTextField Counter="0" Immediate="true" Label="Input" Variant="Variant.Text" @bind-Value="Input" Lines="Rows" Clearable="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentPaste" OnAdornmentClick="@(async e => await ReadFromClipboard())" />
 <MudTextField Counter="0" Immediate="true" Label="Output" ReadOnly="true" Variant="Variant.Text" @bind-Value="_output" Lines="Rows" Clearable="true" Adornment="Adornment.End" AdornmentIcon="@Icons.Material.Filled.ContentCopy" OnAdornmentClick="@(async e => await clipboard.WriteTextAsync(_output))" />
 
 
 @code {
-    MudChipSet? _mudChipSet;
-    MudChip[]? selected;
-    private string _output = string.Empty;
-    private int Rows = 10;
-    string[] chipText = new string[0];
-    string sLine0 = string.Empty;
-    string sampleText = @"
+  MudChipSet? _mudChipSet;
+  MudChip[]? selected;
+  private string _output = string.Empty;
+  private int Rows = 10;
+  string[] chipText = new string[0];
+  string sLine0 = string.Empty;
+  string sampleText = @"
 INSERT INTO #temptable ([TypeName], [Description], [TypeCode], [SortOrder], [Available], [Expired], [CreatedByName], [CreatedDate], [LastModifiedByName], [LastModifiedDate])
 VALUES
 ( 'Business', '', '', 6, N'1985-01-01', NULL, 'ran', N'2023-02-06T16:18:58.017', 'ran', N'2023-02-06T16:18:58.017' ),
@@ -46,132 +47,133 @@ VALUES
 ( 'Other', '', NULL, 1, N'2017-12-01', NULL, 'ran', N'2017-12-27T16:37:33.45', 'ran', N'2017-12-27T16:37:33.45' ),
 ";
 
-    async Task ReadFromClipboard()
+  async Task ReadFromClipboard()
+  {
+    // Reading from the clipboard may be denied, so you must handle the exception
+    try
     {
-        // Reading from the clipboard may be denied, so you must handle the exception
-        try
+      Input = await clipboard.ReadTextAsync();
+    }
+    catch (Exception ex)
+    {
+      Snackbar.Configuration.PositionClass = Defaults.Classes.Position.BottomCenter;
+      if (ex.Message.Contains("window.navigator.clipboard.readText is not a function"))
+      {
+        Snackbar.Add("Browser doesn't support to read from clipboard", Severity.Error);
+      }
+    }
+  }
+  private void SelectedChipsChange()
+  {
+    selected = _mudChipSet!.SelectedChips;
+    _output = Output(Input);
+  }
+
+  private string Output(string value)
+  {
+    var lines = value.Trim().Split('\n');
+    if (Input.Length == 0) return "";
+    if (lines.Length <= 1) return "Format of input incorrect";
+
+    sLine0 = ExtractParenthesis(lines[0]);
+    var index = GetIndex(sLine0);
+    if (index.Count > 0)
+    {
+
+      for (var i = 2; index.Count > 0 && i < lines.Length; i++)
+      {
+        if (!string.IsNullOrEmpty(lines[i]) || !lines[i].Equals("\r"))
         {
-            Input = await clipboard.ReadTextAsync();
+          lines[i] = ModifyColumn(lines[i], index);
         }
-        catch (Exception ex)
+      }
+      var result = string.Join('\n', lines).TrimEnd();
+      if (string.IsNullOrEmpty(result)) return string.Empty;
+      if (result.LastIndexOf(',') > 0) result = result.Remove(result.LastIndexOf(','));
+      return result;
+    }
+    if (selected?.Length >= 0)
+    {
+      return "Need to a select chip";
+    }
+    return "Format of input incorrect";
+  }
+
+  private string[] GetChipText(string input)
+  {
+    var columns = input.Split(", ");
+    if (columns.Length <= 1) return new string[0];
+    return columns;
+  }
+
+  private string ModifyColumn(string lineValue, List<int> index)
+  {
+    var s = ExtractParenthesis(lineValue);
+    if (string.IsNullOrEmpty(s)) return string.Empty;
+    var values = Regex.Split(s, @",(?=(?:[^']*'[^']*')*[^']*$)");
+
+    foreach (var i in index)
+    {
+      values[i] = "GETDATE()";
+    }
+    values[4] = "N'1950-01-01'";
+    values[5] = "NULL";
+    values[6] = "'alliance'";
+    values[8] = "'alliance'";
+
+    return "(" + string.Join(", ", values) + "),";
+  }
+
+  private List<int> GetIndex(string input)
+  {
+    var columns = input.Split(", ");
+    if (columns.Length <= 1) return new();
+    List<int> results = new();
+    if (selected != null)
+    {
+      var temp = selected.Select(chip => chip.Text);
+      for (var i = 0; i < columns.Length; i++)
+      {
+        var c = columns[i];
+        if (temp.Contains(c))
+        //if (c.Equals("[CreatedDate]") || c.Equals("[LastModifiedDate]"))
         {
-            Snackbar.Configuration.PositionClass = Defaults.Classes.Position.BottomCenter;
-            if (ex.Message.Contains("window.navigator.clipboard.readText is not a function"))
-            {
-                Snackbar.Add("Browser doesn't support to read from clipboard", Severity.Error);
-            }
+          results.Add(i);
         }
+      }
     }
-    private void SelectedChipsChange()
+    return results;
+
+  }
+
+  private string ExtractParenthesis(string input)
+  {
+    int startIndex = input.IndexOf('(') + 1; // Find the index of the opening parenthesis
+    int endIndex = input.LastIndexOf(')'); // Find the index of the closing parenthesis
+    int length = endIndex - startIndex; // Calculate the length of the text inside parentheses
+    if (length <= 1) return string.Empty;
+    string output = input.Substring(startIndex, length); // Extract the text inside parentheses
+    return output;
+  }
+
+  private void CalculateSize(string value)
+  {
+    Rows = Math.Max(value.Split('\n').Length, value.Split('\r').Length);
+    Rows = Math.Max(Rows, 10);
+  }
+
+  private string _input = "";
+  protected string Input
+  {
+    get => _input;
+    set
     {
-        selected = _mudChipSet!.SelectedChips;
-        _output = Output(Input);
+      sLine0 = string.Empty;
+      _input = value;
+      _output = Output(value);
+      chipText = GetChipText(sLine0);
+
+      CalculateSize(value);
     }
-
-    private string Output(string value)
-    {
-        var lines = value.Trim().Split('\n');
-        if (Input.Length == 0) return "";
-        if (lines.Length <= 1) return "Format of input incorrect";
-
-        sLine0 = ExtractParenthesis(lines[0]);
-        var index = GetIndex(sLine0);
-        if (index.Count > 0)
-        {
-
-            for (var i = 2; index.Count > 0 && i < lines.Length; i++)
-            {
-                if (!string.IsNullOrEmpty(lines[i]) || !lines[i].Equals("\r"))
-                {
-                    lines[i] = ModifyColumn(lines[i], index);
-                }
-            }
-            var result = string.Join('\n', lines).TrimEnd();
-            if (string.IsNullOrEmpty(result)) return string.Empty;
-            if (result.LastIndexOf(',') > 0) result = result.Remove(result.LastIndexOf(','));
-            return result;
-        }
-        if (selected?.Length >= 0)
-        {
-            return "Need to a select chip";
-        }
-        return "Format of input incorrect";
-    }
-
-    private string[] GetChipText(string input)
-    {
-        var columns = input.Split(", ");
-        if (columns.Length <= 1) return new string[0];
-        return columns;
-    }
-
-    private string ModifyColumn(string lineValue, List<int> index)
-    {
-        var s = ExtractParenthesis(lineValue);
-        if (string.IsNullOrEmpty(s)) return string.Empty;
-        var values = s.Split(", ");
-        foreach (var i in index)
-        {
-            values[i] = "GETDATE()";
-        }
-        values[4] = "N'1950-01-01'";
-        values[5] = "NULL";
-        values[6] = "'alliance'";
-        values[8] = "'alliance'";
-
-        return "(" + string.Join(", ", values) + "),";
-    }
-
-    private List<int> GetIndex(string input)
-    {
-        var columns = input.Split(", ");
-        if (columns.Length <= 1) return new();
-        List<int> results = new();
-        if (selected != null)
-        {
-            var temp = selected.Select(chip => chip.Text);
-            for (var i = 0; i < columns.Length; i++)
-            {
-                var c = columns[i];
-                if (temp.Contains(c))
-                //if (c.Equals("[CreatedDate]") || c.Equals("[LastModifiedDate]"))
-                {
-                    results.Add(i);
-                }
-            }
-        }
-        return results;
-
-    }
-
-    private string ExtractParenthesis(string input)
-    {
-        int startIndex = input.IndexOf('(') + 1; // Find the index of the opening parenthesis
-        int endIndex = input.LastIndexOf(')'); // Find the index of the closing parenthesis
-        int length = endIndex - startIndex; // Calculate the length of the text inside parentheses
-        if (length <= 1) return string.Empty;
-        string output = input.Substring(startIndex, length); // Extract the text inside parentheses
-        return output;
-    }
-
-    private void CalculateSize(string value)
-    {
-        Rows = Math.Max(value.Split('\n').Length, value.Split('\r').Length);
-        Rows = Math.Max(Rows, 10);
-    }
-
-    private string _input = "";
-    protected string Input
-    {
-        get => _input;
-        set
-        {
-            sLine0 = string.Empty;
-            _input = value;
-            _output = Output(value);
-            chipText = GetChipText(sLine0);
-           
-            CalculateSize(value);
-        }
-    }
+  }
 }
