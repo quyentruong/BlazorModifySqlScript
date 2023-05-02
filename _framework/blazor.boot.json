@@ -7,7 +7,7 @@
   "linkerEnabled": true,
   "resources": {
     "assembly": {
-      "BlazorModifySqlScript.dll": "sha256-klX9c9eftirGCnRQD0+SfsXPie4ch0Xe2sM9K3SiliI=",
+      "BlazorModifySqlScript.dll": "sha256-G1PjCSgEdWyIbmcasm8cZJkucxLkjgKvcinhwE4z2\/Q=",
       "CurrieTechnologies.Razor.Clipboard.dll": "sha256-zd9U4Qas6J9hLpJtywoeALRjNsqHZZDdm7Chvsv2XH8=",
       "Microsoft.AspNetCore.Components.dll": "sha256-5e4mGyQ2Mh7HOGrrgwxlo9mbK96TjeWJJuzpBCfswz8=",
       "Microsoft.AspNetCore.Components.Forms.dll": "sha256-wcPyGU\/T7lzlTPNy+M4AeOL1yYc7qTSAkQwoYJPJdO0=",
@@ -46,7 +46,7 @@
       "System.Runtime.InteropServices.JavaScript.dll": "sha256-xQbATUiyP+9FskXnIZjMPfWI2fliO8eL9DW2ykdx4AY=",
       "System.Text.Encodings.Web.dll": "sha256-XtlYVeWX2Cmthln9DGs\/njEX2ESirU+jWiTWlpp2IKY=",
       "System.Text.Json.dll": "sha256-rSEhn8Jy9FyBDfRBpGKxpVw0V+jCM039u84+m+V79co=",
-      "System.Text.RegularExpressions.dll": "sha256-oksrvgCLEZY6o6nfUV3RNJsTa8VCxAznPlceBkMqb9M=",
+      "System.Text.RegularExpressions.dll": "sha256-nI0fIeoycv9A3e8ZSdZXZIU0ShNpEkAjy6DsCDGFc8E=",
       "Toolbelt.Blazor.PWA.Updater.dll": "sha256-T7yFVqCOYgREYAL7QwUb7v9ywwi5tBozK3GNtZpOvPU=",
       "Toolbelt.Blazor.PWA.Updater.Service.dll": "sha256-DxofLJKW1Sj5Qu96c+V9\/S+RVDPmQjiif3pcechU5GU="
     },
