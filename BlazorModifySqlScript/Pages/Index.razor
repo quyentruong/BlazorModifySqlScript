@@ -14,6 +14,11 @@
             {
                 <MudChip Text="@c" Default="true" Color="Color.Primary" Variant="Variant.Text"></MudChip>
             }
+            else if (c.Equals("[Expired]") || c.Equals("[Available]") || c.Equals("[CreatedByName]") || c.Equals("[LastModifiedByName]"))
+            {
+                <MudChip Disabled Text="@c" Color="Color.Primary" Variant="Variant.Text"></MudChip>
+            }
+
             else
             {
                 <MudChip Text="@c" Color="Color.Primary" Variant="Variant.Text"></MudChip>
@@ -26,8 +31,8 @@
 
 
 @code {
-        MudChipSet? _mudChipSet;
-        MudChip[]? selected;
+    MudChipSet? _mudChipSet;
+    MudChip[]? selected;
     private string _output = string.Empty;
     private int Rows = 10;
     string[] chipText = new string[0];
@@ -109,6 +114,10 @@ VALUES
         {
             values[i] = "GETDATE()";
         }
+        values[4] = "N'1950-01-01'";
+        values[5] = "NULL";
+        values[6] = "'alliance'";
+        values[8] = "'alliance'";
 
         return "(" + string.Join(", ", values) + "),";
     }
